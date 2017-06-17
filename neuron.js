@@ -38,10 +38,13 @@ Neuron.prototype.eval = function(input) {
 
   var sum = 0.0;
   for (var i=0; i<input.length; i++) {
-    sum += this._weight * input[i] + this._bias;
+    sum += this._weight * input[i];
   }
-  
-  sum *= (1.0 / input.length);
+  sum += this._bias;
+ 
+  sum = 1.0 / (1.0 + Math.exp(-sum));
+
+  //sum = sum > .55 ? 1.0 : 0.0;
 
   return sum;
 }
