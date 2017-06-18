@@ -1,4 +1,6 @@
 var Neuron = require('./neuron');
+var Layer = require('./layer');
+var Brain = require('./brain');
 
 var trainData = [
   {input: [0, 0], output: [0]},
@@ -7,84 +9,29 @@ var trainData = [
   {input: [1, 1], output: [0]}
 ];
 
-var inputLayer = [];
-inputLayer.push(new Neuron());
-inputLayer.push(new Neuron());
-
-var hiddenLayer = [];
-hiddenLayer.push(new Neuron());
-hiddenLayer.push(new Neuron());
-hiddenLayer.push(new Neuron());
-hiddenLayer.push(new Neuron());
-hiddenLayer.push(new Neuron());
-
-var outputLayer = [];
-for (var i=0; i<trainData[0].output.length; i++) {
-  outputLayer.push(new Neuron());
-}
-
-var neurons = [];
-
-inputLayer.forEach(function(neuron) {
-  neurons.push(neuron);
-}, this);
-
-hiddenLayer.forEach(function(neuron) {
-  neurons.push(neuron);
-}, this);
-
-outputLayer.forEach(function(neuron) {
-  neurons.push(neuron);
-}, this);
-
-function evaluateLayer(layer, input) {
-  var layerOutput = [];
-
-  if (layer.length > 0) {
-    for (var i=0; i<layer.length; i++) {
-      var neuron = layer[i];
-      var value = neuron.eval(input);
-      layerOutput.push(value);
-    }
-  } else {
-    layerOutput = Array(input.length);
-    for (var i=0; i<input.length; i++){
-      layerOutput[i] = input[i];
-    }
-  }
-  return layerOutput  
-}
-
-function evaluate(input) {
-  var output = input.slice();
-
-  output = evaluateLayer(inputLayer, output);
-  output = evaluateLayer(hiddenLayer, output);
-  output = evaluateLayer(outputLayer, output);
-
-  return output;
-}
+var brain = new Brain(trainData[0].input.length, 2, trainData[0].output.length);
 
 var error = 1.0;
 var errorThreshold = 0.0001;
 var iteration = 0 ;
 var setupMin = null;
 var setupGradient = null;
-var learningRate = 0.01;
+var learningRate = 0.0001;
 
-while(error > errorThreshold && iteration < 100000) {
+while(error > errorThreshold && iteration < 1000000) {
   
-  var setup = [];
+  var setup = Array(brain.getNeurons().length);
   if (setupMin === null || setupGradient === null || error > learningRate ) {
-    var scaleWeight = Math.random() * 10.0;
-    var scaleBias = Math.random() * 10.0;
-    for (var n=0; n<neurons.length; n++) {
-      setup.push({weight: scaleWeight * (Math.random() * 2.0 - 1.0), bias: scaleBias * (Math.random() * 2.0 - 1.0)});
+    var scaleWeight = Math.random() * 100.0;
+    var scaleBias = Math.random() * 100.0;
+    for (var n=0; n<setup.length; n++) {
+      setup.push({
+        weight: scaleWeight * (Math.random() * 2.0 - 1.0), 
+        bias: scaleBias * (Math.random() * 2.0 - 1.0)
+      });
     }
   } else {
-    setup = Array(neurons.length);
-
-    for (var n=0; n<neurons.length; n++) {
+    for (var n=0; n<brain.getNeurons().length; n++) {
       setup[n] = {
         weight: setupMin[n].weight - setupGradient[n].weight,
         bias: setupMin[n].bias - setupGradient[n].bias
@@ -92,22 +39,22 @@ while(error > errorThreshold && iteration < 100000) {
     }
   }
 
-  for (var n=0; n<neurons.length; n++){
-    neurons[n].setWeight(setup[n].weight).setBias(setup[n].bias);
+  for (var n=0; n<brain.getNeurons().length; n++){
+    brain.getNeurons()[n].setWeight(setup[n].weight).setBias(setup[n].bias);
   }
 
   var setupError = .0;
 
   for (var s=0; s<trainData.length; s++) {
     var sample = trainData[s];    
-    var output = evaluate(sample.input);
+    var output = brain.evaluate(sample.input);
     
     for (var j=0; j<output.length; j++) {
       setupError += Math.pow(sample.output[j] - output[j], 2.0);
     }
   }
 
-  setupError *= 1.0/(2.0 * neurons.length);
+  setupError *= 1.0/(1.0 * brain.getNeurons().length);
 
   if (setupError < error) {
     var valueError = error - setupError;
@@ -157,12 +104,12 @@ if (error > errorThreshold) {
 
 if (setupMin) {
   console.log('Setup: ' + JSON.stringify(setupMin));
-  for (var n=0; n<neurons.length; n++){
-    neurons[n].setWeight(setupMin[n].weight).setBias(setupMin[n].bias);
+  for (var n=0; n<brain.getNeurons().length; n++){
+    brain.getNeurons()[n].setWeight(setupMin[n].weight).setBias(setupMin[n].bias);
   }
 
-  console.log(evaluate([0, 0]));
-  console.log(evaluate([1, 0]));
-  console.log(evaluate([0, 1]));
-  console.log(evaluate([1, 1]));
+  console.log(brain.evaluate([0, 0]));
+  console.log(brain.evaluate([1, 0]));
+  console.log(brain.evaluate([0, 1]));
+  console.log(brain.evaluate([1, 1]));
 }
