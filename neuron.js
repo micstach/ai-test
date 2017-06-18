@@ -41,10 +41,8 @@ Neuron.prototype.eval = function(input) {
     sum += this._weight * input[i];
   }
   sum += this._bias;
- 
-  sum = 1.0 / (1.0 + Math.exp(-sum));
-
-  return sum;
+  return sum = 1.0 / (1.0 + Math.exp(-sum));
+  //return sum > 0 ? 1.0 : 0.0;
 }
 
 module.exports = Neuron;
