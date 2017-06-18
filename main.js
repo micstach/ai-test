@@ -18,13 +18,14 @@ var setupMin = null;
 var setupGradient = null;
 var learningRate = 0.0001;
 
-while(error > errorThreshold && iteration < 1000000) {
+while(error > errorThreshold && iteration < 10000000) {
   
-  var setup = Array(brain.getNeurons().length);
+  var setup = [];
+
   if (setupMin === null || setupGradient === null || error > learningRate ) {
     var scaleWeight = Math.random() * 100.0;
     var scaleBias = Math.random() * 100.0;
-    for (var n=0; n<setup.length; n++) {
+    for (var n=0; n<brain.getNeurons().length; n++) {
       setup.push({
         weight: scaleWeight * (Math.random() * 2.0 - 1.0), 
         bias: scaleBias * (Math.random() * 2.0 - 1.0)
@@ -32,10 +33,10 @@ while(error > errorThreshold && iteration < 1000000) {
     }
   } else {
     for (var n=0; n<brain.getNeurons().length; n++) {
-      setup[n] = {
+      setup.push({
         weight: setupMin[n].weight - setupGradient[n].weight,
         bias: setupMin[n].bias - setupGradient[n].bias
-      };
+      });
     }
   }
 
