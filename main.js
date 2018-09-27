@@ -1,6 +1,9 @@
 var Neuron = require('./neuron');
 var Layer = require('./layer');
 var Brain = require('./brain');
+var Individual = require('./individual');
+var Crossover = require('./crossover');
+var crossover = new Crossover();
 
 var trainData = [
   {input: [0, 0], output: [0]},
@@ -9,7 +12,7 @@ var trainData = [
   {input: [1, 1], output: [0]}
 ];
 
-var brain = new Brain(trainData[0].input.length, 2, trainData[0].output.length);
+var brain = new Brain(trainData[0].input.length, 4, trainData[0].output.length);
 
 var error = 1.0;
 var errorThreshold = 0.0001;
@@ -18,80 +21,76 @@ var setupMin = null;
 var setupGradient = null;
 var learningRate = 0.0001;
 
-while(error > errorThreshold && iteration < 1000000) {
+
+let individualsCount = 100;
+let individuals = new Array(individualsCount);
+for (let i=0; i<individualsCount; i++) {
+  individuals[i] = new Individual(null, brain.getNeurons().length * 2);
+}
+
+let individualsRatio = new Array(individualsCount);
+
+while(error > errorThreshold && iteration < 1000) {
+
+  for (let i=0; i<individualsCount; i++) {
+    var individual = individuals[i];
+
+    // setup NN with individual DNA
+    for (let n=0; n<brain.getNeurons().length; n++) {
+      let weight = individual.getDna()[2*n + 0];
+      let bias = individual.getDna()[2*n + 1];
+      brain.getNeurons()[n].setWeight(weight).setBias(bias);
+    }
+
+    // run trought training data
+    error = 0.0;
+    for (let s=0; s<trainData.length; s++) {
+      var sample = trainData[s];    
+      var output = brain.evaluate(sample.input);
+      
+      for (let j=0; j<output.length; j++) {
+        error += Math.pow(sample.output[j] - output[j], 2.0);
+      }
+    }
+    error = (1.0/(brain.getNeurons().length)) * Math.sqrt(error);
   
-  var setup = Array(brain.getNeurons().length);
-  if (setupMin === null || setupGradient === null || error > learningRate ) {
-    var scaleWeight = Math.random() * 100.0;
-    var scaleBias = Math.random() * 100.0;
-    for (var n=0; n<setup.length; n++) {
-      setup.push({
-        weight: scaleWeight * (Math.random() * 2.0 - 1.0), 
-        bias: scaleBias * (Math.random() * 2.0 - 1.0)
-      });
-    }
-  } else {
-    for (var n=0; n<brain.getNeurons().length; n++) {
-      setup[n] = {
-        weight: setupMin[n].weight - setupGradient[n].weight,
-        bias: setupMin[n].bias - setupGradient[n].bias
-      };
-    }
+    individualsRatio[i] = error;
   }
 
-  for (var n=0; n<brain.getNeurons().length; n++){
-    brain.getNeurons()[n].setWeight(setup[n].weight).setBias(setup[n].bias);
-  }
+  // peak most valuable individuals
+  for (let x=0; x<individualsRatio.length; x++) {
+    for (let y=0; y<individualsRatio.length; y++) {
+      if (x < y && individualsRatio[x] > individualsRatio[y]) {
+        let r = individualsRatio[x];
+        individualsRatio[x] = individualsRatio[y];
+        individualsRatio[y] = r;
 
-  var setupError = .0;
-
-  for (var s=0; s<trainData.length; s++) {
-    var sample = trainData[s];    
-    var output = brain.evaluate(sample.input);
-    
-    for (var j=0; j<output.length; j++) {
-      setupError += Math.pow(sample.output[j] - output[j], 2.0);
-    }
-  }
-
-  setupError *= 1.0/(1.0 * brain.getNeurons().length);
-
-  if (setupError < error) {
-    var valueError = error - setupError;
-    error = setupError;
-
-    if (setupMin) {
-      setupGradient = [];
-      var length = 0.0;
-      for (var g=0; g<setup.length; g++) {
-        var d = {
-          weight: setupMin[g].weight - setup[g].weight,
-          bias: setupMin[g].bias - setup[g].bias,        
-        };
-        setupGradient.push(d);
-
-        length += Math.pow(d.weight, 2.0) + Math.pow(d.bias, 2.0);
-
+        let individual = individuals[x];
+        individuals[x] = individuals[y];
+        individuals[y] = individual;  
       }
-      length = Math.sqrt(length);
-
-      for (var g=0; g<setupGradient.length; g++) {
-        setupGradient[g].weight *= 1.0 / length;
-        setupGradient[g].bias *= 1.0 / length;
-      }
-
-      console.log('gradient length: ' + length);
     }
-
-    setupMin = Array(setup.length);
-    for (var c=0; c<setup.length; c++){
-      setupMin[c] = {
-        weight: setup[c].weight,
-        bias: setup[c].bias
-      };
-    }
-    console.log('error: ' + error + ", iteration: " + iteration);
   }
+
+  console.log('Error: ' + individualsRatio[0]);
+
+  let childs = [];
+  let crossoverRange = 15;
+  for (let x=0; x<crossoverRange; x++) {
+    for (let y=0; y<crossoverRange; y++) {
+      if (x < y) {
+        let child = crossover.create(individuals[x], individuals[y]);
+        childs.push(child);
+      }
+    }
+  }
+
+  for (let i=0; i<individuals.length; i++) {
+    delete individuals[i];
+    individuals[i] = childs[i];
+  }
+
+
 
   iteration ++;
 }
@@ -99,17 +98,19 @@ while(error > errorThreshold && iteration < 1000000) {
 if (error > errorThreshold) {
   console.log('does not converge: ' + error);
 } else {
-  console.log('converge: ' + error);
+  console.log('converged: ' + error);
 }
 
-if (setupMin) {
-  console.log('Setup: ' + JSON.stringify(setupMin));
-  for (var n=0; n<brain.getNeurons().length; n++){
-    brain.getNeurons()[n].setWeight(setupMin[n].weight).setBias(setupMin[n].bias);
-  }
+var individual = individuals[0];
 
-  console.log(brain.evaluate([0, 0]));
-  console.log(brain.evaluate([1, 0]));
-  console.log(brain.evaluate([0, 1]));
-  console.log(brain.evaluate([1, 1]));
+// setup NN with individual DNA
+for (let n=0; n<brain.getNeurons().length; n++) {
+  let weight = individual.getDna()[2*n + 0];
+  let bias = individual.getDna()[2*n + 1];
+  brain.getNeurons()[n].setWeight(weight).setBias(bias);
 }
+
+console.log(brain.evaluate([0, 0]));
+console.log(brain.evaluate([1, 0]));
+console.log(brain.evaluate([0, 1]));
+console.log(brain.evaluate([1, 1]));
