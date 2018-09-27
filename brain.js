@@ -3,7 +3,7 @@ var Layer = require('./layer');
 function Brain(inputSize, hiddenSize, outputSize) {
   this._inputLayer = new Layer(inputSize, 1);
   this._hiddenLayer = new Layer(hiddenSize, inputSize);
-  this._hiddenLayer2 = new Layer(hiddenSize, inputSize);
+  this._hiddenLayer2 = new Layer(hiddenSize, hiddenSize);
   this._outputLayer = new Layer(outputSize, hiddenSize);
   this._neurons = [];
 
