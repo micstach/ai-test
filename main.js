@@ -104,7 +104,7 @@ if (error > errorThreshold) {
 }
 
 var individual = individuals[0];
-
+console.log('dna: ' + individual.getDna());
 // setup NN with individual DNA
 let iIdx = 0;
 for (let n=0; n<brain.getNeurons().length; n++) {

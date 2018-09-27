@@ -3,6 +3,7 @@ var Layer = require('./layer');
 function Brain(inputSize, hiddenSize, outputSize) {
   this._inputLayer = new Layer(inputSize, 1);
   this._hiddenLayer = new Layer(hiddenSize, inputSize);
+  this._hiddenLayer2 = new Layer(hiddenSize, inputSize);
   this._outputLayer = new Layer(outputSize, hiddenSize);
   this._neurons = [];
 
@@ -11,6 +12,10 @@ function Brain(inputSize, hiddenSize, outputSize) {
   }, this);
 
   this._hiddenLayer.getNeurons().forEach(function(neuron) {
+    this._neurons.push(neuron);
+  }, this);
+
+  this._hiddenLayer2.getNeurons().forEach(function(neuron) {
     this._neurons.push(neuron);
   }, this);
 
@@ -24,6 +29,7 @@ Brain.prototype.evaluate = function(input) {
 
   output = this._inputLayer.evaluate(output, true);
   output = this._hiddenLayer.evaluate(output, false);
+  output = this._hiddenLayer2.evaluate(output, false);
   output = this._outputLayer.evaluate(output, false);
 
   return output;
