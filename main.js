@@ -12,15 +12,11 @@ var trainData = [
   {input: [1, 1], output: [0]}
 ];
 
-var brain = new Brain(trainData[0].input.length, 4, trainData[0].output.length);
+var brain = new Brain(trainData[0].input.length, 2, trainData[0].output.length);
 
 var error = 1.0;
 var errorThreshold = 0.0001;
 var iteration = 0 ;
-var setupMin = null;
-var setupGradient = null;
-var learningRate = 0.0001;
-
 
 let individualsCount = 100;
 let individuals = new Array(individualsCount);
@@ -42,7 +38,7 @@ while(error > errorThreshold && iteration < 1000) {
       brain.getNeurons()[n].setWeight(weight).setBias(bias);
     }
 
-    // run trought training data
+    // calculate error on traingData
     error = 0.0;
     for (let s=0; s<trainData.length; s++) {
       var sample = trainData[s];    
@@ -52,7 +48,7 @@ while(error > errorThreshold && iteration < 1000) {
         error += Math.pow(sample.output[j] - output[j], 2.0);
       }
     }
-    error = (1.0/(brain.getNeurons().length)) * Math.sqrt(error);
+    //error = (1.0/(trainData.length)) * Math.sqrt(error);
   
     individualsRatio[i] = error;
   }
@@ -72,24 +68,27 @@ while(error > errorThreshold && iteration < 1000) {
     }
   }
 
-  console.log('Error: ' + individualsRatio[0]);
+  console.log(`Error [${iteration}]: ${individualsRatio[0]}`);
 
-  let childs = [];
-  let crossoverRange = 15;
-  for (let x=0; x<crossoverRange; x++) {
-    for (let y=0; y<crossoverRange; y++) {
-      if (x < y) {
-        let child = crossover.create(individuals[x], individuals[y]);
-        childs.push(child);
+  if (error > errorThreshold) {
+    let childs = [];
+    let crossoverRange = Math.floor(Math.sqrt(individualsCount)) + 1;
+    for (let x=0; x<crossoverRange; x++) {
+      for (let y=0; y<crossoverRange; y++) {
+        if (x != y) {
+          let child = crossover.create(individuals[x], individuals[y]);
+          childs.push(child);
+          if (childs.length == individualsCount)
+            break;
+        }
       }
     }
-  }
 
-  for (let i=0; i<individuals.length; i++) {
-    delete individuals[i];
-    individuals[i] = childs[i];
+    for (let i=0; i<individuals.length; i++) {
+      delete individuals[i];
+      individuals[i] = childs[i];
+    }
   }
-
 
 
   iteration ++;
@@ -110,7 +109,21 @@ for (let n=0; n<brain.getNeurons().length; n++) {
   brain.getNeurons()[n].setWeight(weight).setBias(bias);
 }
 
-console.log(brain.evaluate([0, 0]));
-console.log(brain.evaluate([1, 0]));
-console.log(brain.evaluate([0, 1]));
-console.log(brain.evaluate([1, 1]));
+console.log(parseFloat(brain.evaluate([0, 0])).toFixed(2));
+console.log(parseFloat(brain.evaluate([1, 0])).toFixed(2));
+console.log(parseFloat(brain.evaluate([0, 1])).toFixed(2));
+console.log(parseFloat(brain.evaluate([1, 1])).toFixed(2));
+
+
+// calculate error on traingData
+error = 0.0;
+for (let s=0; s<trainData.length; s++) {
+  var sample = trainData[s];    
+  var output = brain.evaluate(sample.input);
+  
+  for (let j=0; j<output.length; j++) {
+    error += Math.pow(sample.output[j] - output[j], 2.0);
+  }
+}
+console.log('Result error: ' + error);
+  
