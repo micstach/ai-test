@@ -1,9 +1,9 @@
 var Layer = require('./layer');
 
 function Brain(inputSize, hiddenSize, outputSize) {
-  this._inputLayer = new Layer(inputSize);
-  this._hiddenLayer = new Layer(hiddenSize);
-  this._outputLayer = new Layer(outputSize);
+  this._inputLayer = new Layer(inputSize, 1);
+  this._hiddenLayer = new Layer(hiddenSize, inputSize);
+  this._outputLayer = new Layer(outputSize, hiddenSize);
   this._neurons = [];
 
   this._inputLayer.getNeurons().forEach(function(neuron) {
@@ -22,15 +22,27 @@ function Brain(inputSize, hiddenSize, outputSize) {
 Brain.prototype.evaluate = function(input) {
   var output = input.slice();
 
-  output = this._inputLayer.evaluate(output);
-  output = this._hiddenLayer.evaluate(output);
-  output = this._outputLayer.evaluate(output);
+  output = this._inputLayer.evaluate(output, true);
+  output = this._hiddenLayer.evaluate(output, false);
+  output = this._outputLayer.evaluate(output, false);
 
   return output;
 };
 
 Brain.prototype.getNeurons = function() {
   return this._neurons;
+};
+
+Brain.prototype.getWeightsCount = function() {
+  let count = 0;
+  for (let i=0; i<this._neurons.length; i++) {
+    count += this._neurons[i].getConnectionsCount();
+  }
+  return count;
+}
+
+Brain.prototype.getBiasesCount = function() {
+  return this._neurons.length;
 };
 
 module.exports = Brain;

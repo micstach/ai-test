@@ -1,16 +1,20 @@
-function Neuron(name) {
-  this._name = name
+function Neuron(connections) {
   this._typeName = "Neuron";
-  this._weight = 0.0;
-  this._bias = Math.random() * 0.2 - 0.1;
+  this._connections = connections;
+  this._weights = [];
+  this._bias = 0.0;
 } 
 
-Neuron.prototype.setWeight = function setWeight(weight) {
-  this._weight = weight;
-  return this;
+Neuron.prototype.getWeights = function() {
+  return this._weights;
+}
+
+Neuron.prototype.clearWeights = function() {
+  this._weights = [];
 }
 
 Neuron.prototype.setBias = function setBias(bias) {
+
   this._bias = bias;
   return this;
 }
@@ -23,8 +27,12 @@ Neuron.prototype.getName = function getName() {
   return this._name;
 }
 
-Neuron.prototype.getWeight = function getWeight() {
-  return this._weight;
+Neuron.prototype.getConnectionsCount = function() {
+  return this._connections;
+};
+
+Neuron.prototype.getWeights = function getWeights() {
+  return this._weights;
 }
 
 Neuron.prototype.getBias = function getBias() {
@@ -38,7 +46,7 @@ Neuron.prototype.eval = function(input) {
 
   var sum = 0.0;
   for (var i=0; i<input.length; i++) {
-    sum += this._weight * input[i];
+    sum += this._weights[i] * input[i];
   }
   sum += this._bias;
   return 1.0 / (1.0 + Math.exp(-sum));

@@ -6,22 +6,22 @@ var Crossover = require('./crossover');
 var crossover = new Crossover();
 
 var trainData = [
-  {input: [0, 0], output: [0]},
-  {input: [1, 0], output: [1]},
-  {input: [0, 1], output: [1]},
-  {input: [1, 1], output: [0]}
+  {input: [0, 0], output: [0,0]},
+  {input: [1, 0], output: [0,1]},
+  {input: [0, 1], output: [1,0]},
+  //{input: [1, 1], output: [0,0]}
 ];
 
 var brain = new Brain(trainData[0].input.length, 2, trainData[0].output.length);
 
 var error = 1.0;
-var errorThreshold = 0.0001;
+var errorThreshold = 0.0000000001;
 var iteration = 0 ;
 
 let individualsCount = 100;
 let individuals = new Array(individualsCount);
 for (let i=0; i<individualsCount; i++) {
-  individuals[i] = new Individual(null, brain.getNeurons().length * 2);
+  individuals[i] = new Individual(null, brain.getWeightsCount() + brain.getBiasesCount());
 }
 
 let individualsRatio = new Array(individualsCount);
@@ -32,25 +32,28 @@ while(error > errorThreshold && iteration < 1000) {
     var individual = individuals[i];
 
     // setup NN with individual DNA
+    let iIdx = 0;
     for (let n=0; n<brain.getNeurons().length; n++) {
-      let weight = individual.getDna()[2*n + 0];
-      let bias = individual.getDna()[2*n + 1];
-      brain.getNeurons()[n].setWeight(weight).setBias(bias);
+      let neuron = brain.getNeurons()[n];
+      neuron.clearWeights();
+      for (let c=0; c<neuron.getConnectionsCount(); c++) {
+        neuron.getWeights()[c] = individual.getDna()[iIdx];
+        iIdx++;
+      }
+      neuron.setBias(individual.getDna()[iIdx]);
+      iIdx++;
     }
 
     // calculate error on traingData
-    error = 0.0;
+    individualsRatio[i] = 0.0;
     for (let s=0; s<trainData.length; s++) {
       var sample = trainData[s];    
       var output = brain.evaluate(sample.input);
       
       for (let j=0; j<output.length; j++) {
-        error += Math.pow(sample.output[j] - output[j], 2.0);
+        individualsRatio[i] += Math.pow(sample.output[j] - output[j], 2.0);
       }
     }
-    //error = (1.0/(trainData.length)) * Math.sqrt(error);
-  
-    individualsRatio[i] = error;
   }
 
   // peak most valuable individuals
@@ -68,7 +71,8 @@ while(error > errorThreshold && iteration < 1000) {
     }
   }
 
-  console.log(`Error [${iteration}]: ${individualsRatio[0]}`);
+  error = individualsRatio[0];
+  console.log(`Error [${iteration}]: ${error}`);
 
   if (error > errorThreshold) {
     let childs = [];
@@ -90,7 +94,6 @@ while(error > errorThreshold && iteration < 1000) {
     }
   }
 
-
   iteration ++;
 }
 
@@ -103,19 +106,33 @@ if (error > errorThreshold) {
 var individual = individuals[0];
 
 // setup NN with individual DNA
+let iIdx = 0;
 for (let n=0; n<brain.getNeurons().length; n++) {
-  let weight = individual.getDna()[2*n + 0];
-  let bias = individual.getDna()[2*n + 1];
-  brain.getNeurons()[n].setWeight(weight).setBias(bias);
+  let neuron = brain.getNeurons()[n];
+  neuron.clearWeights();
+  for (let c=0; c<neuron.getConnectionsCount(); c++) {
+    neuron.getWeights()[c] = individual.getDna()[iIdx];
+    iIdx++;
+  }
+  neuron.setBias(individual.getDna()[iIdx]);
+  iIdx++;
 }
 
-console.log(parseFloat(brain.evaluate([0, 0])).toFixed(2));
-console.log(parseFloat(brain.evaluate([1, 0])).toFixed(2));
-console.log(parseFloat(brain.evaluate([0, 1])).toFixed(2));
-console.log(parseFloat(brain.evaluate([1, 1])).toFixed(2));
+console.log('Training data...');
+console.log(brain.evaluate([0, 0]));
+console.log(brain.evaluate([1, 0]));
+console.log(brain.evaluate([0, 1]));
+console.log(brain.evaluate([1, 1]));
 
+// console.log('Test data...');
+// console.log(parseFloat(brain.evaluate([0.25, 0.0])).toFixed(2));
+// console.log(parseFloat(brain.evaluate([0.5, 0.0])).toFixed(2));
+// console.log(parseFloat(brain.evaluate([0.75, 0.0])).toFixed(2));
+// console.log(parseFloat(brain.evaluate([0.85, 0.0])).toFixed(2));
 
 // calculate error on traingData
+trainData.push({input: [1, 1], output: [0,0]});
+
 error = 0.0;
 for (let s=0; s<trainData.length; s++) {
   var sample = trainData[s];    
